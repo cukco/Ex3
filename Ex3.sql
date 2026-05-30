@@ -1,24 +1,31 @@
-insert into students(id, full_name, birth_year, major, gpa, gender) values
-    (8,'Phan Hoàng Nam',2003,'CNTT',3.8,'Nam');
+select c.customer_id,
+       c.customer_name,
+       sum(o.total_price) as total_revenue,
+       count(o.customer_id) as order_count from customers c
+       inner join orders o on c.customer_id = o.customer_id
+group by c.customer_id, c.customer_name
+order by c.customer_id asc;
 
-update students
-set gpa=3.4 where full_name='Lê Quốc Cường'
 
-delete from students
-where gpa is null;
+select c.customer_id,
+       c.customer_name from customers c
+       inner join orders o on c.customer_id = o.customer_id
+group by c.customer_id, c.customer_name
+having avg(total_price) > ( select avg(orders.total_price) from orders)
+order by c.customer_id;
 
-select *from students
-where major='CNTT' and gpa>=3.0
-    limit 3;
 
-select distinct major  from students;
+select city, sum(total_price) from customers c
+inner join orders o on c.customer_id = o.customer_id
+group by city
+having sum(total_price)=(
+    select sum(total_price) from customers c
+    inner join orders o on c.customer_id = o.customer_id
+    group by city
+    order by sum(total_price) desc limit 1);
 
-select *from students
-where major='CNTT'
-order by GPA desc, full_name asc;
-
-select *from students
-where full_name like 'Nguyễn%';
-
-select *from students
-where birth_year between  2001 and 2003;
+select customer_name, city, sum(quantity) as product_quantity,sum(total_price) as total_revenue
+from customers
+inner join orders on customers.customer_id = orders.customer_id
+inner join order_items on orders.order_id = order_items.order_id
+group by customer_name,city,customers.customer_id;
