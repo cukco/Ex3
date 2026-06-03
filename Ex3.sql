@@ -1,31 +1,33 @@
-select c.customer_id,
-       c.customer_name,
-       sum(o.total_price) as total_revenue,
-       count(o.customer_id) as order_count from customers c
-       inner join orders o on c.customer_id = o.customer_id
-group by c.customer_id, c.customer_name
-order by c.customer_id asc;
+--part1--
+explain analyze select *from post
+where is_public=true and lower(content)='đây là nội dung của bài viết thứ 290000';
+
+create index idx_content on post(lower(content));
+
+--part2--
+EXPLAIN ANALYZE SELECT * FROM post
+WHERE tags @> ARRAY['travel'];
+drop index idx_tags;
+create index idx_tags on post using gin(tags);
+
+--part3--
+CREATE INDEX idx_post_recent_public
+    ON post(created_at DESC)
+    WHERE is_public = TRUE;
+
+EXPLAIN ANALYZE
+SELECT * FROM post
+WHERE is_public = TRUE
+  AND created_at >= NOW() - INTERVAL '7 days';
+
+--part4--
+create index idx_composite on post(user_id,created_at desc);
+
+drop index idx_composite;
+
+EXPLAIN ANALYZE
+SELECT * FROM post
+WHERE user_id < 1000
+  AND created_at >= NOW() - INTERVAL '7 days';
 
 
-select c.customer_id,
-       c.customer_name from customers c
-       inner join orders o on c.customer_id = o.customer_id
-group by c.customer_id, c.customer_name
-having avg(total_price) > ( select avg(orders.total_price) from orders)
-order by c.customer_id;
-
-
-select city, sum(total_price) from customers c
-inner join orders o on c.customer_id = o.customer_id
-group by city
-having sum(total_price)=(
-    select sum(total_price) from customers c
-    inner join orders o on c.customer_id = o.customer_id
-    group by city
-    order by sum(total_price) desc limit 1);
-
-select customer_name, city, sum(quantity) as product_quantity,sum(total_price) as total_revenue
-from customers
-inner join orders on customers.customer_id = orders.customer_id
-inner join order_items on orders.order_id = order_items.order_id
-group by customer_name,city,customers.customer_id;
