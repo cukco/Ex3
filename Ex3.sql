@@ -1,33 +1,43 @@
---part1--
-explain analyze select *from post
-where is_public=true and lower(content)='đây là nội dung của bài viết thứ 290000';
+create or replace procedure adjust_salary(
+    p_emp_id INT,
+    OUT p_new_salary NUMERIC
+) language plpgsql
+as $$
+    declare
+        v_emp_lv int;
+        v_rate numeric;
+    begin
+        select job_level into v_emp_lv from employees
+        where emp_id=p_emp_id;
 
-create index idx_content on post(lower(content));
+        if v_emp_lv is null then
+            raise notice 'Nhân viên không tồn tại';
+            p_new_salary:=null;
+        end if;
 
---part2--
-EXPLAIN ANALYZE SELECT * FROM post
-WHERE tags @> ARRAY['travel'];
-drop index idx_tags;
-create index idx_tags on post using gin(tags);
+        case v_emp_lv
+            when 1 then v_rate:=1.05;
+            when 2 then v_rate:=1.10;
+            when 3 then v_rate:=1.15;
+        else v_rate:=null;
+        end case;
 
---part3--
-CREATE INDEX idx_post_recent_public
-    ON post(created_at DESC)
-    WHERE is_public = TRUE;
+        if v_rate is null then
+            if v_emp_lv is not null then
+                raise notice 'Nhân viên out trình';
+                p_new_salary:=null;
+        end if;
+        else
+            update employees
+            set salary=salary*v_rate where emp_id=p_emp_id
+            returning salary into p_new_salary;
+            raise notice 'Tăng lương thành công';
+        end if;
 
-EXPLAIN ANALYZE
-SELECT * FROM post
-WHERE is_public = TRUE
-  AND created_at >= NOW() - INTERVAL '7 days';
-
---part4--
-create index idx_composite on post(user_id,created_at desc);
-
-drop index idx_composite;
-
-EXPLAIN ANALYZE
-SELECT * FROM post
-WHERE user_id < 1000
-  AND created_at >= NOW() - INTERVAL '7 days';
-
-
+    exception
+        when others then
+            raise notice 'Xảy ra lỗi: %',SQLERRM;
+        rollback;
+    end;
+$$;
+call adjust_salary(5, NULL);
