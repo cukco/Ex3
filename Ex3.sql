@@ -1,43 +1,25 @@
-create or replace procedure adjust_salary(
-    p_emp_id INT,
-    OUT p_new_salary NUMERIC
-) language plpgsql
-as $$
+create or replace function f_change()
+returns trigger as $$
     declare
-        v_emp_lv int;
-        v_rate numeric;
     begin
-        select job_level into v_emp_lv from employees
-        where emp_id=p_emp_id;
-
-        if v_emp_lv is null then
-            raise notice 'Nhân viên không tồn tại';
-            p_new_salary:=null;
+        if (tg_op='INSERT') then
+            insert into employees_log(employee_id, operation, new_data) values
+            (new.id,tg_op,to_jsonb(new));
+        elsif (tg_op='DELETE') then
+            insert into employees_log(employee_id, operation, old_data) VALUES
+            (old.id,tg_op,to_jsonb(old));
+        elsif (tg_op='UPDATE') then
+            insert into employees_log(employee_id, operation, old_data, new_data) values
+            (new.id,tg_op,to_jsonb(old),to_jsonb(new));
         end if;
-
-        case v_emp_lv
-            when 1 then v_rate:=1.05;
-            when 2 then v_rate:=1.10;
-            when 3 then v_rate:=1.15;
-        else v_rate:=null;
-        end case;
-
-        if v_rate is null then
-            if v_emp_lv is not null then
-                raise notice 'Nhân viên out trình';
-                p_new_salary:=null;
-        end if;
-        else
-            update employees
-            set salary=salary*v_rate where emp_id=p_emp_id
-            returning salary into p_new_salary;
-            raise notice 'Tăng lương thành công';
-        end if;
-
-    exception
-        when others then
-            raise notice 'Xảy ra lỗi: %',SQLERRM;
-        rollback;
+        return null;
     end;
-$$;
-call adjust_salary(5, NULL);
+$$ language plpgsql;
+
+create trigger t_log
+    after update or insert or delete on employees
+    for each row
+    execute function f_change();
+
+delete from employees
+where id=1;
