@@ -1,25 +1,26 @@
-create or replace function f_change()
+create or replace function f_check()
 returns trigger as $$
     declare
+        current_stock int;
     begin
-        if (tg_op='INSERT') then
-            insert into employees_log(employee_id, operation, new_data) values
-            (new.id,tg_op,to_jsonb(new));
-        elsif (tg_op='DELETE') then
-            insert into employees_log(employee_id, operation, old_data) VALUES
-            (old.id,tg_op,to_jsonb(old));
-        elsif (tg_op='UPDATE') then
-            insert into employees_log(employee_id, operation, old_data, new_data) values
-            (new.id,tg_op,to_jsonb(old),to_jsonb(new));
+        select coalesce(stock) into current_stock from products
+        where product_id=new.product_id;
+
+        if (current_stock < new.quantity) then
+            raise exception 'Không đủ hàng/Không có sản phẩm đó';
         end if;
-        return null;
+
+        update products
+        set stock=stock-new.quantity where product_id=new.product_id;
+        return new;
     end;
 $$ language plpgsql;
 
-create trigger t_log
-    after update or insert or delete on employees
+create trigger t_check
+    after insert on sales
     for each row
-    execute function f_change();
+    execute function f_check();
 
-delete from employees
-where id=1;
+insert into sales(product_id, quantity) values
+(3,30),
+(2,50);
