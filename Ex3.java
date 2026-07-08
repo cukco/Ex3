@@ -1,17 +1,22 @@
-public class Ex73 {
-    private static double rate;
-    static void setRate(double r){
-        rate=r;
+class Student{
+    String StudentId;
+    String StudentName;
+    int age;
+    public void displayData(){
+        System.out.print("ID: "+this.StudentId+",Name: "+this.StudentName+",Age: "+this.age);
     }
-    static double getRate(){
-        return rate;
-    }
-    static double toUSD(int vnd){
-        return vnd*rate;
-    }
+}
+public class Ex771 {
     public static void main(String[] args){
-        setRate((double)1/27000);
-        System.out.printf("Tỷ giá hiện tại: 1 VND/ %f USD\n",rate);
-        System.out.printf("Đổi tiền: %d VND -> %.3f USD",5000000,toUSD(5000000));
+        Student A=new Student();
+        A.StudentId="2022";
+        A.StudentName="Yolo";
+        A.age=20;
+        Student B=new Student();
+        B.StudentId="20223";
+        B.StudentName="Oke";
+        B.age=21;
+        A.displayData();
+        B.displayData();
     }
 }
