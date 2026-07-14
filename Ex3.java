@@ -1,17 +1,18 @@
-public class Ex73 {
-    private static double rate;
-    static void setRate(double r){
-        rate=r;
+    class Computer{
+        double calculatePrice(double basePrice){
+            return basePrice;
+        }
+        double calculatePrice(double basePrice, double tax){
+            return basePrice+tax;
+        }
+        double calculatePrice(double basePrice, double tax, double discount){
+            return basePrice+tax-discount;
+        }
     }
-    static double getRate(){
-        return rate;
+    public class Ex103 {
+        public static void main(String[] args){
+            Computer computer=new Computer();
+            System.out.printf("Method 1: %.2f\nMethod 2: %.2f\nMethod 3: %.2f",computer.calculatePrice(100)
+            ,computer.calculatePrice(100,10),computer.calculatePrice(100,10,20));
+        }
     }
-    static double toUSD(int vnd){
-        return vnd*rate;
-    }
-    public static void main(String[] args){
-        setRate((double)1/27000);
-        System.out.printf("Tỷ giá hiện tại: 1 VND/ %f USD\n",rate);
-        System.out.printf("Đổi tiền: %d VND -> %.3f USD",5000000,toUSD(5000000));
-    }
-}
